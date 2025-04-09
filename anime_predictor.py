@@ -1,5 +1,6 @@
-import argparse
+import show
 from main import process_anime
+import argparse
 
 """
 Parses command line arguments 
