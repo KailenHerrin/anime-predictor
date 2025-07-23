@@ -1,5 +1,5 @@
 import scraper
-import show
+from show import Show
 import re
 import sys
 
@@ -11,13 +11,26 @@ If valid, returns Romaji (Japanese) name
 def process_anime(anime_name):
     # Get api response from jikan api 
     jikan_url = f"https://api.jikan.moe/v4/anime?q={anime_name}&limit=1"
-    jikan_response = scraper.fetch_html((jikan_url), json=True)
+    
+    jikan_response = scraper.fetch_html((jikan_url), parse_json=True) 
+    '''
+        NSTEAD OF USING JIKAN RESPONSE HERE, USE THE RESPONSE WE GET FROM https://api.jikan.moe/v4/anime/< anime code >&limit=1
+    '''
+    
+    #mal_id = jikan_response['data'][0]['mal_id']
+    #related = (scraper.fetch_html(f"https://api.jikan.moe/v4/anime/{mal_id}/relations"))
+    #print(related)
 
     # Verify anime name
-    english_name, romaji_name = verify_name(anime_name, jikan_response)
+    verify_name(anime_name, jikan_response)
+
+    show = Show.create_show(jikan_response)
+    #show.create_show(jikan_response)
+    
+    print(show)
     
     # I need to change this to a bigger method called create_show
-    mal_data = scraper.scrape_mal(english_name, romaji_name, jikan_response)
+    #mal_data = scraper.scrape_mal(english_name, romaji_name, jikan_response)
     
 
 """
@@ -26,23 +39,17 @@ Removes spaces, capitals, symbols, and punctuation
 Returns normalized string
 """
 def normalize_string(string):
-    string = re.sub(r'[^a-zA-Z0-9]', '', string.lower().strip())
+    string = re.sub(r'[^a-zA-Z0-9.,!?]', '', string.lower().strip())
     return string
 
 """
-Needs a comment
+Verifys that provided name is valid and exists in Jikan database. 
+Normalizes string to handle case sensitivity, trailing spaces, etc
+Returns the english and romaji names as they appear in Jikan databse. 
 """
 def verify_name(anime_name, jikan_response):
-    english_name = ""
-    romaji_name = ""
-
-    # Iterate through all titles to find English and Romaji titles
-    for title in jikan_response["data"][0]["titles"]:
-        if title["type"] == "Default":
-            romaji_name = title["title"]
-        elif title["type"] == "English":
-            english_name = title["title"]
-
+    english_name, romaji_name = scraper.fetch_names(jikan_response)
+    print(english_name)
     # Check if english title is the same as the requested title
     if normalize_string(english_name) != normalize_string(anime_name):
         print(f"""Couldn't find results for: {anime_name}\nDid you mean: {english_name}""")

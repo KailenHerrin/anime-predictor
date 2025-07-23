@@ -23,9 +23,10 @@ def anime_predictor():
 
     anime_name = args.anime
 
-    status = process_anime(anime_name)
+    print(process_anime(anime_name))
+    #show = process_anime(anime_name)
 
-    #print(status)
+    #print(show)
 
 
 if __name__ == "__main__":
