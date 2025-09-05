@@ -1,6 +1,6 @@
 import requests
 import show
-from bs4 import BeautifulSoup
+#from bs4 import BeautifulSoup
 import urllib.parse
 from datetime import date
 
@@ -64,7 +64,7 @@ def scrape_mal(jikan_response):
         "members": members,
         "favorites": favorites
     }
-    #print(data)
+
     return data
 
 def fetch_names(jikan_response):

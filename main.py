@@ -27,10 +27,12 @@ def process_anime(anime_name):
     show = Show.create_show(jikan_response)
     #show.create_show(jikan_response)
     
-    print(show)
+    #print(show)
     
     # I need to change this to a bigger method called create_show
     #mal_data = scraper.scrape_mal(english_name, romaji_name, jikan_response)
+
+    return show
     
 
 """
@@ -49,11 +51,16 @@ Returns the english and romaji names as they appear in Jikan databse.
 """
 def verify_name(anime_name, jikan_response):
     english_name, romaji_name = scraper.fetch_names(jikan_response)
-    print(english_name)
+    
     # Check if english title is the same as the requested title
     if normalize_string(english_name) != normalize_string(anime_name):
-        print(f"""Couldn't find results for: {anime_name}\nDid you mean: {english_name}""")
-        sys.exit()
+        answer = input(f"""Couldn't find results for: {anime_name}\nDid you mean: {english_name} """)
+        
+        if answer == "yes":
+            print(f"Searching the web for data on: {english_name}...")
+            return english_name, romaji_name
+        else:
+            sys.exit()
     else:
         print(f"Searching the web for data on: {english_name}...")
         return english_name, romaji_name

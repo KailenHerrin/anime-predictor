@@ -22,11 +22,10 @@ def anime_predictor():
     args = parse_args()
 
     anime_name = args.anime
+    show = process_anime(anime_name)
 
-    print(process_anime(anime_name))
-    #show = process_anime(anime_name)
 
-    #print(show)
+    print(show)
 
 
 if __name__ == "__main__":

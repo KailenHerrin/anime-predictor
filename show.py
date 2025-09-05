@@ -29,27 +29,28 @@ class Show:
 
     @classmethod
     def create_show(cls, jikan_response):
+        seasons = []
         while True: 
         
             english_title, romaji_title = scraper.fetch_names(jikan_response)
 
             data = scraper.scrape_mal(jikan_response)
 
-            season = Season.from_raw_data(data)
+            seasons.append(Season.from_raw_data(data))
 
-            #Add season to show
+            #Add season to list of seasons
+            
 
             sequal = scraper.check_sequel(jikan_response)
 
             break
-
-            
-        
-        
-
-        
-
-
+        return cls (
+            english_title = english_title,
+            romaji_title = romaji_title,
+            studio = None, # Can get this later from jikan_response
+            seasons = seasons
+        )
+    
     """
     Returns the average score of a show.
     If show has no seasons return None
@@ -108,6 +109,16 @@ class Season:
 
     @classmethod
     def from_raw_data(cls, data: dict):
-        return
+        return cls (
+            episodes=data.get("episodes", 0),
+            score=data.get("score", 0),
+            start_date=data.get("start_date"),
+            end_date=data.get("end_date"),
+            rank=data.get("rank", 0),
+            popularity=data.get("popularity", 0),
+            members=data.get("members", 0),
+            favorites=data.get("favorites", 0),
+        )
+        
         
          
