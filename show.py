@@ -59,9 +59,10 @@ class Show:
 
             if sequel:
                 mal_id = sequel
-                season_data_raw = scraper.fetch_html(f"https://api.jikan.moe/v4/anime/{mal_id}", parse_json=True)
             else:
                 break
+
+            season_data_raw = scraper.fetch_html(f"https://api.jikan.moe/v4/anime/{mal_id}", parse_json=True)
 
         return cls (
             english_title = english_title,

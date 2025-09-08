@@ -11,7 +11,7 @@ def process_anime(anime_name):
     jikan_url = f"https://api.jikan.moe/v4/anime?q={anime_name}&limit=1"
     
     mal_id = scraper.fetch_html((jikan_url), parse_json=True)['data'][0]['mal_id']
-
+    
     show = Show.create_show(mal_id, anime_name)
 
     return show
