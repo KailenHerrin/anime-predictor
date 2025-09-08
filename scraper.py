@@ -1,6 +1,7 @@
 import requests
 from time import sleep
 from datetime import date
+import sys
 
 REQUEST_DELAY_TIME = 1
 MAX_ATTEMPTS = 3
@@ -35,31 +36,40 @@ def fetch_html(url, parse_json=False):
 Extracts info from MAL and returns it as a dictionary
 """
 def scrape_mal(season_data_raw):
-    # Get link to myanimelist 
-    #mal_link = season_data_raw["data"][0]["url"]
     
     status = season_data_raw["data"]["status"]
     score = season_data_raw["data"]["score"]
-    studio = season_data_raw["data"]["studios"][0].get("name")
+    #studio = season_data_raw["data"]["studios"][0].get("name")
     episodes = season_data_raw["data"]["episodes"]
     dates = season_data_raw["data"]["aired"]["prop"]
     rank = season_data_raw["data"]["rank"]
     popularity = season_data_raw["data"]["popularity"]
     members = season_data_raw["data"]["members"]
     favorites = season_data_raw["data"]["favorites"]
-    
+
+    if status == "Not yet aired": # Checks for a confirmed sequal that is yet to air
+        print("A sequel has already been confirmed. YAY!")
+        sys.exit() # Exit process as a new season has been confirmed
+
     # Format start and end dates using datetime.date class
     start_date = date(dates["from"]["year"], 
                       dates["from"]["month"], 
                       dates["from"]["day"])
+    
 
-    # Check if show is currently airing, if it is airing there is no end_date
-    if status != "Currently Airing":                  
-        end_date = date(dates["to"]["year"], 
-                        dates["to"]["month"], 
-                        dates["to"]["day"])
-    else:
-        end_date = None
+    end_date = start_date
+    # Check if data is for a movie or for a season. If for a season get end dates. 
+    # If for a movie end date is the same as start date
+    if season_data_raw["data"]["type"] == "TV":
+        # Check if show is currently airing
+        if status != "Currently Airing":                  
+            end_date = date(dates["to"]["year"], 
+                            dates["to"]["month"], 
+                            dates["to"]["day"])
+        else: # A sequel is currenty being aired
+            print("A sequel is currently airing. Enjoy!")
+            sys.exit() # Exit process as a new season is currently in production
+    
 
     # Store data as a library and then return it
     data = {
@@ -94,19 +104,13 @@ def fetch_names(season_data_raw):
 Needs Comment
 """
 def check_sequel(prev_season_id):
-    """
-    mal_id = season_data_raw['data']['mal_id']
-    print(mal_id)
-    jikan_status = season_data_raw["data"][0]["status"]
-    """
-    print("___________________________________________")
+
     related_response = fetch_html(f"https://api.jikan.moe/v4/anime/{prev_season_id}/relations", parse_json=True)["data"]
 
     for response in related_response:
-        print(response)
 
         if response['relation'] == "Sequel":
             return response.get("entry")[0].get("mal_id")
-        
+    
     return None
         
