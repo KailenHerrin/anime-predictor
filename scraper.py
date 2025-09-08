@@ -1,10 +1,9 @@
 import requests
-import show
-#from bs4 import BeautifulSoup
-import urllib.parse
+from time import sleep
 from datetime import date
 
-#import praw (THIS IS REDDIT's API) I will impliment in the future
+REQUEST_DELAY_TIME = 1
+MAX_ATTEMPTS = 3
 
 """
 Given a valid URL, fetches it's contents.
@@ -12,33 +11,42 @@ If URL is invalid print error
 """
 def fetch_html(url, parse_json=False):
     headers = {"User-Agent": "Mozilla/5.0"} # Prevents websites from blocking scripts
-    # ^^^ Note: Will need to impliment more detailed user agents and mutliple random rotating agents
+    # ^^^ Note: May need to impliment more detailed user agents and mutliple random rotating agents
+    
+    attempts = 0
+    while attempts < MAX_ATTEMPTS: 
+        attempts += 1
 
-    response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers)
+        # Check if response is valid and return website information
+        if response.status_code == 200:
+            if parse_json is True: 
+                return response.json() # Return the json formatted HTML text
+            return response.text # Return the raw HTML text
+        
+        elif response.status_code == 429:
+            sleep(REQUEST_DELAY_TIME + attempts)
 
-    # Check if response is valid and return website information
-    if response.status_code == 200:
-        if parse_json is True: 
-            return response.json() # Return the json formatted HTML text
-        return response.text # Return the raw HTML text
-    else:
-        print(f"Failed to fetch {url} (Status Code: {response.status_code})") 
-        return None # Invalid url. Return nothing and print error message
+        else:
+            print(f"Failed to fetch {url} (Status Code: {response.status_code})")
+
+            return None # Invalid url. Return nothing and print error message
 """
 Extracts info from MAL and returns it as a dictionary
 """
-def scrape_mal(jikan_response):
+def scrape_mal(season_data_raw):
     # Get link to myanimelist 
-    #mal_link = jikan_response["data"][0]["url"]
-    status = jikan_response["data"][0]["status"]
-    score = jikan_response["data"][0]["score"]
-    studio = jikan_response["data"][0]["studios"][0]["name"] # Do I need this?
-    episodes = jikan_response["data"][0]["episodes"]
-    dates = jikan_response["data"][0]["aired"]["prop"]
-    rank = jikan_response["data"][0]["rank"]
-    popularity = jikan_response["data"][0]["popularity"]
-    members = jikan_response["data"][0]["members"]
-    favorites = jikan_response["data"][0]["favorites"]
+    #mal_link = season_data_raw["data"][0]["url"]
+    
+    status = season_data_raw["data"]["status"]
+    score = season_data_raw["data"]["score"]
+    studio = season_data_raw["data"]["studios"][0].get("name")
+    episodes = season_data_raw["data"]["episodes"]
+    dates = season_data_raw["data"]["aired"]["prop"]
+    rank = season_data_raw["data"]["rank"]
+    popularity = season_data_raw["data"]["popularity"]
+    members = season_data_raw["data"]["members"]
+    favorites = season_data_raw["data"]["favorites"]
     
     # Format start and end dates using datetime.date class
     start_date = date(dates["from"]["year"], 
@@ -53,7 +61,7 @@ def scrape_mal(jikan_response):
     else:
         end_date = None
 
-    # LIBRARY
+    # Store data as a library and then return it
     data = {
         "episodes": episodes,
         "score": score,
@@ -64,29 +72,41 @@ def scrape_mal(jikan_response):
         "members": members,
         "favorites": favorites
     }
-
     return data
 
-def fetch_names(jikan_response):
+"""
+Fetches the offical English and Japanese names that are most similar to the one provided by user
+Used to confirm with user that predictor is predicing the correct show.
+"""
+def fetch_names(season_data_raw):
+    names_list = season_data_raw["data"]["titles"]
+    english_name, romaji_name = None, None
 
-    for title in jikan_response["data"][0]["titles"]:
-        if title["type"] == "Default":
-            romaji_name = title["title"]
-        elif title["type"] == "English":
-            english_name = title["title"]
+    for name in names_list:
+        if name.get("type") == "English":
+            english_name = name.get("title")
+        elif name.get("type") == "Default":
+            romaji_name = name.get("title")
 
     return english_name, romaji_name
 
-def check_sequel(jikan_response):
-    mal_id = jikan_response['data'][0]['mal_id']
-    jikan_status = jikan_response["data"][0]["status"]
+"""
+Needs Comment
+"""
+def check_sequel(prev_season_id):
+    """
+    mal_id = season_data_raw['data']['mal_id']
+    print(mal_id)
+    jikan_status = season_data_raw["data"][0]["status"]
+    """
+    print("___________________________________________")
+    related_response = fetch_html(f"https://api.jikan.moe/v4/anime/{prev_season_id}/relations", parse_json=True)["data"]
 
-    related_response = fetch_html(f"https://api.jikan.moe/v4/anime/{mal_id}/relations", parse_json=True)
-    
-    sequel = related_response['data'][0]['relation']
-    #print(sequel)
-    if sequel == "Sequel":
-        sequal_id = related_response['data'][0]['entry'][0]['name']
-        sequel_response = fetch_html(f"https://api.jikan.moe/v4/anime/{mal_id}", parse_json=True)
-        #scrape_mal(sequel_response)
-        print(sequel_response['data']['score'])
+    for response in related_response:
+        print(response)
+
+        if response['relation'] == "Sequel":
+            return response.get("entry")[0].get("mal_id")
+        
+    return None
+        

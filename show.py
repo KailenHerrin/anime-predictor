@@ -1,9 +1,14 @@
 import datetime
+import utils
 from tabnanny import check
 import scraper
 from typing import Optional, Sequence
 """
-Class description
+Class description for a Show
+
+Attributes: English and Japanese titles, studio name, 
+a list of seasons with a length >= 0 date information, 
+start and end date as <datetime> objects
 """
 class Show:
     def __init__(self, english_title: str, romaji_title: str, studio: str, seasons: list['Season']):
@@ -14,6 +19,9 @@ class Show:
         self.start_date = seasons[0].start_date if seasons else None
         self.end_date = seasons[-1].end_date if seasons else None
     
+    """
+    Formats a show object when printed into a readable format.
+    """
     def __str__(self):
         return (
             f"Show names: {self.english_title}, {self.romaji_title}\n"
@@ -26,28 +34,39 @@ class Show:
             f"Total members: {self.get_members()}\n"
             f"Total favorites: {self.get_favorites()}\n"
         )
-
+    
+    """
+    Alternate Constructor for a show. 
+    Intended to be the main constructor and used as part of the data pipeline.
+    """
     @classmethod
-    def create_show(cls, jikan_response):
+    def create_show(cls, mal_id, requested_title):
         seasons = []
-        while True: 
-        
-            english_title, romaji_title = scraper.fetch_names(jikan_response)
 
-            data = scraper.scrape_mal(jikan_response)
+        # Get raw data for initial season
+        season_data_raw = scraper.fetch_html(f"https://api.jikan.moe/v4/anime/{mal_id}", parse_json=True)
+
+        # Verify anime name
+        english_title, romaji_title = scraper.fetch_names(season_data_raw)
+        utils.verify_name(requested_title, english_title)
+
+        while True: 
+            data = scraper.scrape_mal(season_data_raw)
 
             seasons.append(Season.from_raw_data(data))
 
-            #Add season to list of seasons
-            
+            sequel = scraper.check_sequel(mal_id)
 
-            sequal = scraper.check_sequel(jikan_response)
+            if sequel:
+                mal_id = sequel
+                season_data_raw = scraper.fetch_html(f"https://api.jikan.moe/v4/anime/{mal_id}", parse_json=True)
+            else:
+                break
 
-            break
         return cls (
             english_title = english_title,
             romaji_title = romaji_title,
-            studio = None, # Can get this later from jikan_response
+            studio = None, # Can get this later from season_data_raw
             seasons = seasons
         )
     
@@ -70,20 +89,32 @@ class Show:
                 return None
             
         return sum(season.rank for season in self.seasons if season.rank is not None) / len(self.seasons)
-            
+   
+    """
+    Returns the average popularity of a show.
+    If show has no seasons return None
+    """       
     def get_popularity(self):
         if not self.seasons:
                 return None
             
         return sum(season.popularity for season in self.seasons if season.popularity is not None) / len(self.seasons)
 
+    """
+    Returns the total number of members belonging to a show.
+    If show has no seasons return 0
+    """
     def get_members(self):
         total_members = 0
         for cur in self.seasons:
             total_members += cur.members
         
         return total_members
-    
+
+    """
+    Returns the total number of favorites belonging to a show.
+    If show has no seasons return 0
+    """ 
     def get_favorites(self):
         total_favorites = 0
         for cur in self.seasons:
@@ -107,6 +138,10 @@ class Season:
         self.members = members if members else 0
         self.favorites = favorites if favorites else 0
 
+    """
+    Alternate Constructor for a season. 
+    Intended to be the main constructor and used as part of the data pipeline.
+    """
     @classmethod
     def from_raw_data(cls, data: dict):
         return cls (
