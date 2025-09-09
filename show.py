@@ -6,18 +6,18 @@ from typing import Optional, Sequence
 """
 Class description for a Show
 
-Attributes: English and Japanese titles, studio name, 
+Attributes: English and Japanese titles, 
 a list of seasons with a length >= 0 date information, 
 start and end date as <datetime> objects
 """
 class Show:
-    def __init__(self, english_title: str, romaji_title: str, studio: str, seasons: list['Season']):
+    def __init__(self, english_title: str, romaji_title: str, seasons: list['Season'], status: str):
         self.english_title = english_title
         self.romaji_title = romaji_title
-        self.studio = studio if studio else None
         self.seasons = seasons if seasons else []
         self.start_date = seasons[0].start_date if seasons else None
         self.end_date = seasons[-1].end_date if seasons else None
+        self.status = status if status else None
     
     """
     Formats a show object when printed into a readable format.
@@ -25,7 +25,6 @@ class Show:
     def __str__(self):
         return (
             f"Show names: {self.english_title}, {self.romaji_title}\n"
-            f"Studio name: {self.studio}\n"
             f"Number of Seasons: {len(self.seasons)}\n"
             f"Aired from: {self.start_date} to: {self.end_date}\n"
             f"Average score: {self.get_score()}\n"
@@ -33,6 +32,7 @@ class Show:
             f"Average popularity: {self.get_popularity()}\n"
             f"Total members: {self.get_members()}\n"
             f"Total favorites: {self.get_favorites()}\n"
+            f"Current Status: {self.status}\n"
         )
     
     """
@@ -67,8 +67,8 @@ class Show:
         return cls (
             english_title = english_title,
             romaji_title = romaji_title,
-            studio = None, # Can get this later from season_data_raw
-            seasons = seasons
+            seasons = seasons if seasons[-1].status == "unconfirmed" else seasons[:-1], # Only include last season if it's finished airing
+            status = seasons[-1].status
         )
     
     """
@@ -122,6 +122,7 @@ class Show:
             total_favorites += cur.favorites
         
         return total_favorites
+    
 
 """
 Class description
@@ -129,7 +130,7 @@ Class description
 class Season:
     def __init__(self, episodes: int, score: float, start_date: datetime.date, 
                  end_date: datetime.date, rank: int, popularity: int, members: int, 
-                 favorites: int):
+                 favorites: int, status: str):
         self.episodes = episodes if episodes else 0    
         self.score = score if score else 0
         self.start_date = start_date if start_date else None
@@ -138,6 +139,7 @@ class Season:
         self.popularity = popularity if popularity else 0
         self.members = members if members else 0
         self.favorites = favorites if favorites else 0
+        self.status = status if status else None
 
     """
     Alternate Constructor for a season. 
@@ -154,6 +156,7 @@ class Season:
             popularity=data.get("popularity", 0),
             members=data.get("members", 0),
             favorites=data.get("favorites", 0),
+            status=data.get("status")
         )
         
         

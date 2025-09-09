@@ -39,7 +39,6 @@ def scrape_mal(season_data_raw):
     
     status = season_data_raw["data"]["status"]
     score = season_data_raw["data"]["score"]
-    #studio = season_data_raw["data"]["studios"][0].get("name")
     episodes = season_data_raw["data"]["episodes"]
     dates = season_data_raw["data"]["aired"]["prop"]
     rank = season_data_raw["data"]["rank"]
@@ -47,42 +46,54 @@ def scrape_mal(season_data_raw):
     members = season_data_raw["data"]["members"]
     favorites = season_data_raw["data"]["favorites"]
 
-    if status == "Not yet aired": # Checks for a confirmed sequal that is yet to air
-        print("A sequel has already been confirmed. YAY!")
-        sys.exit() # Exit process as a new season has been confirmed
-
-    # Format start and end dates using datetime.date class
-    start_date = date(dates["from"]["year"], 
-                      dates["from"]["month"], 
-                      dates["from"]["day"])
-    
-
-    end_date = start_date
-    # Check if data is for a movie or for a season. If for a season get end dates. 
-    # If for a movie end date is the same as start date
-    if season_data_raw["data"]["type"] == "TV":
-        # Check if show is currently airing
-        if status != "Currently Airing":                  
-            end_date = date(dates["to"]["year"], 
-                            dates["to"]["month"], 
-                            dates["to"]["day"])
-        else: # A sequel is currenty being aired
-            print("A sequel is currently airing. Enjoy!")
-            sys.exit() # Exit process as a new season is currently in production
-    
-
-    # Store data as a library and then return it
+    # Store data as a library. Initialize dates None as they are dependant on status
     data = {
         "episodes": episodes,
         "score": score,
-        "start_date": start_date,
-        "end_date": end_date,
+        "start_date": None,
+        "end_date": None,
         "rank": rank,
         "popularity": popularity,
         "members": members,
         "favorites": favorites
     }
-    return data
+
+    # Check Status
+    if status == "Not yet aired": # New season confirmed 
+        # Return data with no dates
+        
+        data.update({"status" : "confirmed"})
+        return data
+    elif status == "Currently Airing": # New season confirmed and currently airing
+        # Return data with a start date but no end date
+        start_date = date(
+            dates["from"]["year"], 
+            dates["from"]["month"], 
+            dates["from"]["day"])
+        
+        data.update({"start_date" : start_date})
+        data.update({"status" : "confirmed"})
+        return data
+    else: # No new season confirmed
+        # Return data with a start date and an end date
+        start_date = date(
+            dates["from"]["year"], 
+            dates["from"]["month"], 
+            dates["from"]["day"])
+        
+        # Check if movie, if so end_date = start_date
+        if season_data_raw["data"]["type"] == "TV":
+            end_date = date(
+                dates["to"]["year"], 
+                dates["to"]["month"], 
+                dates["to"]["day"]) 
+        else:
+            end_date = start_date
+        
+        data.update({"start_date" : start_date})
+        data.update({"end_date" : end_date})
+        data.update({"status" : "unconfirmed"})
+        return data
 
 """
 Fetches the offical English and Japanese names that are most similar to the one provided by user
@@ -92,6 +103,7 @@ def fetch_names(season_data_raw):
     names_list = season_data_raw["data"]["titles"]
     english_name, romaji_name = None, None
 
+    # Loops through all names and pulls out english and romaji names
     for name in names_list:
         if name.get("type") == "English":
             english_name = name.get("title")
@@ -101,14 +113,15 @@ def fetch_names(season_data_raw):
     return english_name, romaji_name
 
 """
-Needs Comment
+Fetches a response from the relations page
+If there is a sequel return the code for that sequal
+If there isn't a sequel return None
 """
 def check_sequel(prev_season_id):
 
     related_response = fetch_html(f"https://api.jikan.moe/v4/anime/{prev_season_id}/relations", parse_json=True)["data"]
 
     for response in related_response:
-
         if response['relation'] == "Sequel":
             return response.get("entry")[0].get("mal_id")
     
