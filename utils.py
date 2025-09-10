@@ -1,21 +1,22 @@
 import sys
 import re
 
-"""
-Takes a string as input
-Removes spaces, capitals, symbols, and punctuation
-Returns normalized string
-"""
 def normalize_string(string):
+    """
+    Takes a string as input
+    Removes spaces, capitals, symbols, and punctuation
+    Returns normalized string
+    """
+
     string = re.sub(r'[^a-zA-Z0-9.,!?]', '', string.lower().strip())
     return string
 
-"""
-Verifys that provided name is valid and exists in Jikan database. 
-Normalizes string to handle case sensitivity, trailing spaces, etc
-Returns the english and romaji names as they appear in Jikan databse. 
-"""
 def verify_name(requested_name, english_name):
+    """
+    Verifys that provided name is valid and exists in Jikan database. 
+    Normalizes string to handle case sensitivity, trailing spaces, etc
+    Returns the english and romaji names as they appear in Jikan databse. 
+    """
     
     # Check if english title is the same as the requested title
     if normalize_string(english_name) != normalize_string(requested_name):

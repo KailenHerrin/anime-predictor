@@ -6,11 +6,12 @@ import sys
 REQUEST_DELAY_TIME = 1
 MAX_ATTEMPTS = 3
 
-"""
-Given a valid URL, fetches it's contents.
-If URL is invalid print error
-"""
 def fetch_html(url, parse_json=False):
+    """
+    Given a valid URL, fetches it's contents.
+    If URL is invalid print error
+    """
+
     headers = {"User-Agent": "Mozilla/5.0"} # Prevents websites from blocking scripts
     # ^^^ Note: May need to impliment more detailed user agents and mutliple random rotating agents
     
@@ -32,10 +33,11 @@ def fetch_html(url, parse_json=False):
             print(f"Failed to fetch {url} (Status Code: {response.status_code})")
 
             return None # Invalid url. Return nothing and print error message
-"""
-Extracts info from MAL and returns it as a dictionary
-"""
+        
 def scrape_mal(season_data_raw):
+    """
+    Extracts info from MAL and returns it as a dictionary
+    """
     
     status = season_data_raw["data"]["status"]
     score = season_data_raw["data"]["score"]
@@ -95,11 +97,12 @@ def scrape_mal(season_data_raw):
         data.update({"status" : "unconfirmed"})
         return data
 
-"""
-Fetches the offical English and Japanese names that are most similar to the one provided by user
-Used to confirm with user that predictor is predicing the correct show.
-"""
 def fetch_names(season_data_raw):
+    """
+    Fetches the offical English and Japanese names that are most similar to the one provided by user
+    Used to confirm with user that predictor is predicing the correct show.
+    """
+
     names_list = season_data_raw["data"]["titles"]
     english_name, romaji_name = None, None
 
@@ -112,12 +115,12 @@ def fetch_names(season_data_raw):
 
     return english_name, romaji_name
 
-"""
-Fetches a response from the relations page
-If there is a sequel return the code for that sequal
-If there isn't a sequel return None
-"""
 def check_sequel(prev_season_id):
+    """
+    Fetches a response from the relations page
+    If there is a sequel return the code for that sequal
+    If there isn't a sequel return None
+    """ 
 
     related_response = fetch_html(f"https://api.jikan.moe/v4/anime/{prev_season_id}/relations", parse_json=True)["data"]
 

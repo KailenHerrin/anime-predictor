@@ -2,11 +2,12 @@ import show
 from main import process_anime
 import argparse
 
-"""
-Parses command line arguments 
-Currently only checks for one tag --anime
-"""
 def parse_args():
+    """
+    Parses command line arguments 
+    Currently only checks for one tag --anime
+    """
+
     parser = argparse.ArgumentParser(prog="Web-Scraper", 
                                      description="Scrapes the web for information on specified anime, predicts the status of the anime production.")    
     # Define CLI arguments
@@ -16,10 +17,11 @@ def parse_args():
     
     return parser.parse_args()
 
-"""
-Takes CLI arguments and scrapes web for information
-"""
 def anime_predictor():
+    """
+    Takes CLI arguments and scrapes web for information
+    """
+    
     args = parse_args()
     
     # Handle CLI args

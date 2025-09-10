@@ -3,14 +3,18 @@ import utils
 from tabnanny import check
 import scraper
 from typing import Optional, Sequence
-"""
-Class description for a Show
 
-Attributes: English and Japanese titles, 
-a list of seasons with a length >= 0 date information, 
-start and end date as <datetime> objects
-"""
 class Show:
+    """
+    Class description for a Show
+
+    Attributes: English and Japanese titles, 
+    a list of seasons with a length >= 0 date information, 
+    start and end date as <datetime> objects
+
+    Represents a show, made up of a list of seasons
+    """
+
     def __init__(self, english_title: str, romaji_title: str, seasons: list['Season'], status: str):
         self.english_title = english_title
         self.romaji_title = romaji_title
@@ -19,10 +23,11 @@ class Show:
         self.end_date = seasons[-1].end_date if seasons else None
         self.status = status if status else None
     
-    """
-    Formats a show object when printed into a readable format.
-    """
     def __str__(self):
+        """
+        Formats a show object when printed into a readable format.
+        """
+
         return (
             f"Show names: {self.english_title}, {self.romaji_title}\n"
             f"Number of Seasons: {len(self.seasons)}\n"
@@ -35,12 +40,13 @@ class Show:
             f"Current Status: {self.status}\n"
         )
     
-    """
-    Alternate Constructor for a show. 
-    Intended to be the main constructor and used as part of the data pipeline.
-    """
     @classmethod
     def create_show(cls, mal_id, requested_title):
+        """
+        Alternate Constructor for a show. 
+        Intended to be the main constructor and used as part of the data pipeline.
+        """
+
         seasons = []
 
         # Get raw data for initial season
@@ -71,63 +77,68 @@ class Show:
             status = seasons[-1].status
         )
     
-    """
-    Returns the average score of a show.
-    If show has no seasons return None
-    """
     def get_score(self):
+        """
+        Returns the average score of a show.
+        If show has no seasons return None
+        """
+
         if not self.seasons:
             return None
         
         return sum(season.score for season in self.seasons if season.score is not None) / len(self.seasons)
     
-    """
-    Returns the average rank of a show.
-    If show has no seasons return None
-    """
     def get_rank(self):
+        """
+        Returns the average rank of a show.
+        If show has no seasons return None
+        """
+        
         if not self.seasons:
                 return None
             
         return sum(season.rank for season in self.seasons if season.rank is not None) / len(self.seasons)
-   
-    """
-    Returns the average popularity of a show.
-    If show has no seasons return None
-    """       
+         
     def get_popularity(self):
+        """
+        Returns the average popularity of a show.
+        If show has no seasons return None
+        """ 
+
         if not self.seasons:
                 return None
             
         return sum(season.popularity for season in self.seasons if season.popularity is not None) / len(self.seasons)
 
-    """
-    Returns the total number of members belonging to a show.
-    If show has no seasons return 0
-    """
     def get_members(self):
+        """
+        Returns the total number of members belonging to a show.
+        If show has no seasons return 0
+        """
+
         total_members = 0
         for cur in self.seasons:
             total_members += cur.members
         
         return total_members
 
-    """
-    Returns the total number of favorites belonging to a show.
-    If show has no seasons return 0
-    """ 
     def get_favorites(self):
+        """
+        Returns the total number of favorites belonging to a show.
+        If show has no seasons return 0
+        """ 
+
         total_favorites = 0
         for cur in self.seasons:
             total_favorites += cur.favorites
         
         return total_favorites
     
-
-"""
-Class description
-"""
 class Season:
+    """
+    Class description
+    """
+
     def __init__(self, episodes: int, score: float, start_date: datetime.date, 
                  end_date: datetime.date, rank: int, popularity: int, members: int, 
                  favorites: int, status: str):
@@ -141,12 +152,13 @@ class Season:
         self.favorites = favorites if favorites else 0
         self.status = status if status else None
 
-    """
-    Alternate Constructor for a season. 
-    Intended to be the main constructor and used as part of the data pipeline.
-    """
     @classmethod
     def from_raw_data(cls, data: dict):
+        """
+        Alternate Constructor for a season. 
+        Intended to be the main constructor and used as part of the data pipeline.
+        """
+        
         return cls (
             episodes=data.get("episodes", 0),
             score=data.get("score", 0),
