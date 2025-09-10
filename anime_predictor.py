@@ -26,7 +26,7 @@ def anime_predictor():
     
     # Handle CLI args
     anime_name = args.anime
-    file_name = args.file if args.file else str(f"{anime_name.replace(" ", "_")}.{args.output}")
+    file_name = args.file if args.file else str(f"output.{args.output}")
 
     # Start the data scraping pipeline
     show = process_anime(anime_name)
@@ -35,11 +35,11 @@ def anime_predictor():
     if args.output == "print":
         print(show)
     elif args.output == "csv":
-        print(f"Written to file: {file_name}")
+        show.to_csv(file_name)
     elif args.output == "json": # CURRENTLY DOES NOTHING
-        print(f"Written to file: {file_name}")
+        print("JSON not supported")
     else:
-        print("Unknown Output type")
+        print("Unknown output type")
 
 
 if __name__ == "__main__":

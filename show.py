@@ -1,7 +1,8 @@
 import datetime
 import utils
-from tabnanny import check
 import scraper
+import os
+import csv
 from typing import Optional, Sequence
 
 class Show:
@@ -74,9 +75,43 @@ class Show:
             english_title = english_title,
             romaji_title = romaji_title,
             seasons = seasons if seasons[-1].status == "unconfirmed" else seasons[:-1], # Only include last season if it's finished airing
-            status = seasons[-1].status
+            status = cls.get_status(seasons[-1].status, len(seasons), seasons[-1].end_date)
         )
     
+    def to_csv(self, filepath):
+        """
+        Converts current show to CSV. 
+        If filepath is provided will attempt to append to file, if file does not exist it will first be created.
+        If no filepath is provided will create new file in current directory named output.csv
+        """
+        
+        header = ["anime", "seasons", "score", "rank", 
+                  "popularity", "members", "favorites", 
+                  "from", "until", "status"]
+        
+        row = [self.english_title, len(self.seasons), self.get_score(), self.get_rank(), 
+               self.get_popularity(), self.get_members(), self.get_favorites(), 
+               self.start_date, self.end_date, self.status]
+        
+        try: 
+            # Attempt to open and write to filepath
+            file_exists = os.path.isfile(filepath)
+
+            with open(filepath, "a", newline="") as fp:
+                writer = csv.writer(fp)
+
+                if not file_exists:
+                # Check if file exists, if not write a header 
+                    writer.writerow(header)
+
+                # Write row of data
+                writer.writerow(row)
+            
+            print(f"Data saved to {filepath}")
+
+        except FileNotFoundError:
+            print("Error: The specified filepath is not valid.")
+
     def get_score(self):
         """
         Returns the average score of a show.
@@ -134,6 +169,36 @@ class Show:
         
         return total_favorites
     
+    @staticmethod
+    def get_status(status, seasons, end_date):
+        """
+        Checks details on show status then returns a value to represent if a show has been
+        confirmed
+        unconfirmed
+        finished
+        discontinued
+
+        Shows that are over <threshhold> years old and have multiple seasons are assumed to be finished
+        Shows that are over <threshhold> years old and have only 1 season are assumed to be discontinued
+        """
+
+        # value to represent how old a show is before we consider it over
+        threshold = 5
+        
+        # get threshold date 
+        cur_date = datetime.date.today()
+        threshold_date = cur_date.replace(year=cur_date.year - threshold)
+
+        if status == "confirmed":
+            return "confirmed"
+        elif end_date < threshold_date and seasons > 1:
+            return "finished"
+        elif end_date < threshold_date and seasons == 1:
+            return "discontinued"
+        else:
+            return "unconfirmed"
+
+    
 class Season:
     """
     Class description
@@ -158,7 +223,7 @@ class Season:
         Alternate Constructor for a season. 
         Intended to be the main constructor and used as part of the data pipeline.
         """
-        
+
         return cls (
             episodes=data.get("episodes", 0),
             score=data.get("score", 0),
