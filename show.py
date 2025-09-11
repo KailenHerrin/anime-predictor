@@ -16,12 +16,13 @@ class Show:
     Represents a show, made up of a list of seasons
     """
 
-    def __init__(self, english_title: str, romaji_title: str, seasons: list['Season'], status: str):
+    def __init__(self, english_title: str, romaji_title: str, seasons: list['Season'], genres: list[str], status: str):
         self.english_title = english_title
         self.romaji_title = romaji_title
         self.seasons = seasons if seasons else []
         self.start_date = seasons[0].start_date if seasons else None
         self.end_date = seasons[-1].end_date if seasons else None
+        self.genres = genres if genres else []
         self.status = status if status else None
     
     def __str__(self):
@@ -32,6 +33,8 @@ class Show:
         return (
             f"Show names: {self.english_title}, {self.romaji_title}\n"
             f"Number of Seasons: {len(self.seasons)}\n"
+            f"Number of Episodes: {self.get_episodes()}\n"
+            f"Genres: {self.genres}\n" 
             f"Aired from: {self.start_date} to: {self.end_date}\n"
             f"Average score: {self.get_score()}\n"
             f"Average rank: {self.get_rank()}\n"
@@ -75,42 +78,41 @@ class Show:
             english_title = english_title,
             romaji_title = romaji_title,
             seasons = seasons if seasons[-1].status == "unconfirmed" else seasons[:-1], # Only include last season if it's finished airing
+            genres = cls.get_genres(seasons) if seasons else [],
             status = cls.get_status(seasons[-1].status, len(seasons), seasons[-1].end_date)
         )
     
-    def to_csv(self, filepath):
+    def to_csv_row(self):
         """
-        Converts current show to CSV. 
-        If filepath is provided will attempt to append to file, if file does not exist it will first be created.
-        If no filepath is provided will create new file in current directory named output.csv
+        Converts current show to a CSV row ready format
+        Returns a list representing a CSV row
         """
         
-        header = ["anime", "seasons", "score", "rank", 
-                  "popularity", "members", "favorites", 
-                  "from", "until", "status"]
+        # Get time deltas for start date and end date 
+        cur_date = datetime.date.today()
+
+        age = cur_date - self.start_date
+        time_since_addition = cur_date - self.end_date
+
+        # Put all data into a row format, age and time_since_addition represented by number of days
+        row = [self.english_title,
+               len(self.seasons),
+               self.get_episodes(),
+               self.get_score(),
+               self.get_rank(),
+               self.get_popularity(),
+               self.get_members(),
+               self.get_favorites(),
+               age.days,
+               time_since_addition.days,
+               int("Action" in self.genres),
+               int("Comedy" in self.genres),
+               int("Romance" in self.genres),
+               int("Mystery" in self.genres),
+               int("Drama" in self.genres),
+               self.status]
         
-        row = [self.english_title, len(self.seasons), self.get_score(), self.get_rank(), 
-               self.get_popularity(), self.get_members(), self.get_favorites(), 
-               self.start_date, self.end_date, self.status]
-        
-        try: 
-            # Attempt to open and write to filepath
-            file_exists = os.path.isfile(filepath)
-
-            with open(filepath, "a", newline="") as fp:
-                writer = csv.writer(fp)
-
-                if not file_exists:
-                # Check if file exists, if not write a header 
-                    writer.writerow(header)
-
-                # Write row of data
-                writer.writerow(row)
-            
-            print(f"Data saved to {filepath}")
-
-        except FileNotFoundError:
-            print("Error: The specified filepath is not valid.")
+        return row
 
     def get_score(self):
         """
@@ -169,6 +171,32 @@ class Show:
         
         return total_favorites
     
+    def get_episodes(self):
+        """
+        Returns the total episode count from all seasons
+        If show has no seasons return 0
+        """
+
+        total_episodes = 0
+        for season in self.seasons:
+            total_episodes += season.episodes
+        
+        return total_episodes
+    
+    @staticmethod
+    def get_genres(seasons):
+        """
+        Return a unique list of all genres found across all seasons
+        """
+
+        genres = []
+        for season in seasons:
+            for genre in season.genres:
+                if genre not in genres:
+                    genres.append(genre)
+        
+        return genres
+    
     @staticmethod
     def get_status(status, seasons, end_date):
         """
@@ -206,7 +234,7 @@ class Season:
 
     def __init__(self, episodes: int, score: float, start_date: datetime.date, 
                  end_date: datetime.date, rank: int, popularity: int, members: int, 
-                 favorites: int, status: str):
+                 favorites: int, genres: list[str], status: str):
         self.episodes = episodes if episodes else 0    
         self.score = score if score else 0
         self.start_date = start_date if start_date else None
@@ -215,6 +243,7 @@ class Season:
         self.popularity = popularity if popularity else 0
         self.members = members if members else 0
         self.favorites = favorites if favorites else 0
+        self.genres = genres if genres else []
         self.status = status if status else None
 
     @classmethod
@@ -233,6 +262,7 @@ class Season:
             popularity=data.get("popularity", 0),
             members=data.get("members", 0),
             favorites=data.get("favorites", 0),
+            genres=data.get("genres", []),
             status=data.get("status")
         )
         

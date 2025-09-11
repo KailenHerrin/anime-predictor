@@ -35,7 +35,8 @@ def anime_predictor():
     if args.output == "print":
         print(show)
     elif args.output == "csv":
-        show.to_csv(file_name)
+        row = show.to_csv_row()
+        print(row)
     elif args.output == "json": # CURRENTLY DOES NOTHING
         print("JSON not supported")
     else:

@@ -1,7 +1,6 @@
 import requests
 from time import sleep
 from datetime import date
-import sys
 
 REQUEST_DELAY_TIME = 1
 MAX_ATTEMPTS = 3
@@ -48,6 +47,12 @@ def scrape_mal(season_data_raw):
     members = season_data_raw["data"]["members"]
     favorites = season_data_raw["data"]["favorites"]
 
+    genres_raw = season_data_raw["data"]["genres"]
+    
+    genres = []
+    for genre in genres_raw:
+        genres.append(genre.get("name"))
+
     # Store data as a library. Initialize dates None as they are dependant on status
     data = {
         "episodes": episodes,
@@ -57,7 +62,8 @@ def scrape_mal(season_data_raw):
         "rank": rank,
         "popularity": popularity,
         "members": members,
-        "favorites": favorites
+        "favorites": favorites,
+        "genres": genres
     }
 
     # Check Status
